@@ -1,0 +1,487 @@
+<html><head><base href="https://websim.ai">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Cifrado y Descifrado Avanzado</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.4.0/mammoth.browser.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <style>
+    :root {
+      --bg-color: #f0f4f8;
+      --text-color: #333;
+      --container-bg: white;
+      --input-border: #ddd;
+      --button-bg: #3498db;
+      --button-text: white;
+      --result-bg: #f9f9f9;
+      --table-border: #ddd;
+      --table-header-bg: #3498db;
+      --table-header-text: white;
+      --decoration-color: rgba(52, 152, 219, 0.1);
+      --modal-bg: rgba(0, 0, 0, 0.5);
+      --switch-bg: #ccc;
+      --switch-circle: white;
+    }
+
+    body.dark-theme {
+      --bg-color: #2c3e50;
+      --text-color: #ecf0f1;
+      --container-bg: #34495e;
+      --input-border: #7f8c8d;
+      --button-bg: #e74c3c;
+      --button-text: #ecf0f1;
+      --result-bg: #2c3e50;
+      --table-border: #7f8c8d;
+      --table-header-bg: #e74c3c;
+      --table-header-text: #ecf0f1;
+      --decoration-color: rgba(231, 76, 60, 0.1);
+      --modal-bg: rgba(0, 0, 0, 0.8);
+      --switch-bg: #555;
+      --switch-circle: #34495e;
+    }
+
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      line-height: 1.6;
+      color: var(--text-color);
+      margin: 0;
+      padding: 20px;
+      background-color: var(--bg-color);
+      transition: all 0.3s ease;
+      min-height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+
+    .container {
+      background-color: var(--container-bg);
+      border-radius: 20px;
+      padding: 40px;
+      box-shadow: 0 15px 30px rgba(0, 0, 0, 0.1);
+      max-width: 800px;
+      width: 100%;
+      position: relative;
+      overflow: hidden;
+    }
+
+    h1, h2 {
+      color: var(--text-color);
+      text-align: center;
+      margin-bottom: 30px;
+      font-size: 2.5em;
+      text-shadow: 2px 2px 4px rgba(0,0,0,0.1);
+    }
+
+    h2 {
+      font-size: 2em;
+      margin-top: 40px;
+    }
+
+    textarea, select, button, input[type="file"] {
+      width: 100%;
+      padding: 15px;
+      margin-bottom: 20px;
+      border: 2px solid var(--input-border);
+      border-radius: 10px;
+      box-sizing: border-box;
+      font-size: 16px;
+      transition: all 0.3s ease;
+      background-color: var(--container-bg);
+      color: var(--text-color);
+    }
+
+    textarea:focus, select:focus {
+      outline: none;
+      border-color: var(--button-bg);
+      box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.3);
+    }
+
+    button {
+      background-color: var(--button-bg);
+      color: var(--button-text);
+      border: none;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      font-weight: bold;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+
+    button:hover {
+      opacity: 0.9;
+      transform: translateY(-3px);
+      box-shadow: 0 6px 12px rgba(0,0,0,0.2);
+    }
+
+    #result {
+      background-color: var(--result-bg);
+      border: 2px solid var(--input-border);
+      padding: 20px;
+      margin-top: 25px;
+      border-radius: 10px;
+      font-size: 16px;
+    }
+
+    .ascii-table {
+      overflow-x: auto;
+      margin-top: 30px;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: separate;
+      border-spacing: 0;
+      border-radius: 10px;
+      overflow: hidden;
+    }
+
+    th, td {
+      border: 1px solid var(--table-border);
+      padding: 12px;
+      text-align: left;
+    }
+
+    th {
+      background-color: var(--table-header-bg);
+      color: var(--table-header-text);
+      font-weight: bold;
+    }
+
+    .button-group {
+      display: flex;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 15px;
+    }
+
+    .button-group button {
+      flex: 1;
+      min-width: 150px;
+    }
+
+    #userGuideBtn {
+      position: fixed;
+      top: 20px;
+      left: 20px;
+      padding: 10px 20px;
+      background-color: var(--button-bg);
+      color: var(--button-text);
+      border: none;
+      border-radius: 25px;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      z-index: 1000;
+    }
+
+    .decoration {
+      position: absolute;
+      width: 200px;
+      height: 200px;
+      opacity: 0.5;
+      z-index: -1;
+      filter: blur(40px);
+    }
+
+    .decoration:nth-child(1) {
+      top: -100px;
+      left: -100px;
+      background: radial-gradient(circle, var(--decoration-color), transparent 60%);
+      animation: float 20s infinite;
+    }
+
+    .decoration:nth-child(2) {
+      bottom: -100px;
+      right: -100px;
+      background: radial-gradient(circle, var(--decoration-color), transparent 60%);
+      animation: float 15s infinite reverse;
+    }
+
+    @keyframes float {
+      0%, 100% { transform: translate(0, 0) rotate(0deg); }
+      25% { transform: translate(20px, 20px) rotate(5deg); }
+      50% { transform: translate(0, 40px) rotate(0deg); }
+      75% { transform: translate(-20px, 20px) rotate(-5deg); }
+    }
+
+    .modal {
+      display: none;
+      position: fixed;
+      z-index: 1001;
+      left: 0;
+      top: 0;
+      width: 100%;
+      height: 100%;
+      overflow: auto;
+      background-color: var(--modal-bg);
+    }
+
+    .modal-content {
+      background-color: var(--container-bg);
+      margin: 15% auto;
+      padding: 20px;
+      border: 1px solid var(--input-border);
+      border-radius: 10px;
+      width: 80%;
+      max-width: 600px;
+    }
+
+    .close {
+      color: var(--text-color);
+      float: right;
+      font-size: 28px;
+      font-weight: bold;
+    }
+
+    .close:hover,
+    .close:focus {
+      color: var(--button-bg);
+      text-decoration: none;
+      cursor: pointer;
+    }
+
+    .theme-switch-wrapper {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-top: 20px;
+    }
+
+    .theme-switch {
+      display: inline-block;
+      height: 34px;
+      position: relative;
+      width: 60px;
+    }
+
+    .theme-switch input {
+      display:none;
+    }
+
+    .slider {
+      background-color: var(--switch-bg);
+      bottom: 0;
+      cursor: pointer;
+      left: 0;
+      position: absolute;
+      right: 0;
+      top: 0;
+      transition: .4s;
+      border-radius: 34px;
+    }
+
+    .slider:before {
+      background-color: var(--switch-circle);
+      bottom: 4px;
+      content: "";
+      height: 26px;
+      left: 4px;
+      position: absolute;
+      transition: .4s;
+      width: 26px;
+      border-radius: 50%;
+    }
+
+    input:checked + .slider {
+      background-color: var(--button-bg);
+    }
+
+    input:checked + .slider:before {
+      transform: translateX(26px);
+    }
+
+    .slider-text {
+      margin-left: 10px;
+      font-size: 14px;
+    }
+  </style>
+</head>
+<body>
+  <button id="userGuideBtn">Guía de Usuario</button>
+  <div class="container">
+    <div class="decoration"></div>
+    <div class="decoration"></div>
+    <h1>Cifrado y Descifrado Avanzado</h1>
+    
+    <textarea id="input" rows="5" placeholder="Ingrese su texto aquí o suba un archivo"></textarea>
+    <input type="file" id="fileInput" accept=".txt,.docx">
+    
+    <select id="shiftAmount">
+      <option value="2">Cifrar/Descifrar por 2</option>
+      <option value="4">Cifrar/Descifrar por 4</option>
+      <option value="8">Cifrar/Descifrar por 8</option>
+      <option value="16">Cifrar/Descifrar por 16</option>
+      <option value="32">Cifrar/Descifrar por 32</option>
+    </select>
+    
+    <div class="button-group">
+      <button onclick="processText('encrypt')">Cifrar</button>
+      <button onclick="processText('decrypt')">Descifrar</button>
+      <button onclick="downloadText('original')">Descargar Original</button>
+      <button onclick="downloadText('processed')">Descargar Procesado</button>
+      <button onclick="downloadPDF()">Descargar PDF</button>
+    </div>
+    
+    <div id="result"></div>
+    <div class="ascii-table" id="asciiTable"></div>
+
+    <div class="theme-switch-wrapper">
+      <label class="theme-switch" for="checkbox">
+        <input type="checkbox" id="checkbox" />
+        <div class="slider"></div>
+      </label>
+      <span class="slider-text">Cambiar Tema</span>
+    </div>
+  </div>
+
+  <div id="userGuideModal" class="modal">
+    <div class="modal-content">
+      <span class="close">&times;</span>
+      <h2>Guía de Usuario</h2>
+      <ol>
+        <li>Ingrese el texto que desea cifrar o descifrar en el cuadro de texto, o cargue un archivo .txt o .docx usando el botón "Seleccionar archivo".</li>
+        <li>Seleccione el desplazamiento deseado (2, 4, 8, 16 o 32) del menú desplegable.</li>
+        <li>Haga clic en "Cifrar" para cifrar el texto o "Descifrar" para descifrarlo.</li>
+        <li>El resultado se mostrará debajo, junto con una tabla ASCII que muestra la correspondencia entre caracteres originales y cifrados.</li>
+        <li>Use los botones "Descargar Original" y "Descargar Procesado" para guardar los textos en su dispositivo.</li>
+        <li>Use el botón "Descargar PDF" para guardar el resultado en formato PDF.</li>
+        <li>Puede cambiar entre el tema claro y oscuro usando el interruptor en la parte inferior de la página.</li>
+      </ol>
+    </div>
+  </div>
+
+  <script>
+    function processText(action) {
+      const input = document.getElementById('input').value;
+      const shift = parseInt(document.getElementById('shiftAmount').value);
+      let processed = '';
+      for (let i = 0; i < input.length; i++) {
+        let charCode = input.charCodeAt(i);
+        if (charCode >= 32 && charCode <= 126) {
+          if (action === 'encrypt') {
+            charCode = ((charCode - 32 + shift) % 95) + 32;
+          } else {
+            charCode = ((charCode - 32 - shift + 95) % 95) + 32;
+          }
+        }
+        processed += String.fromCharCode(charCode);
+      }
+      document.getElementById('result').innerHTML = `
+        <strong>Texto original:</strong> ${input}<br><br>
+        <strong>Texto ${action === 'encrypt' ? 'cifrado' : 'descifrado'}:</strong> ${processed}<br><br>
+        <strong>Desplazamiento:</strong> ${shift}
+      `;
+      generateAsciiTable(shift, action);
+    }
+
+    function generateAsciiTable(shift, action) {
+      let tableHTML = `<table><tr><th>Original</th><th>${action === 'encrypt' ? 'Cifrado' : 'Descifrado'}</th></tr>`;
+      for (let i = 32; i <= 126; i++) {
+        let originalChar = String.fromCharCode(i);
+        let processedCharCode;
+        if (action === 'encrypt') {
+          processedCharCode = ((i - 32 + shift) % 95) + 32;
+        } else {
+          processedCharCode = ((i - 32 - shift + 95) % 95) + 32;
+        }
+        let processedChar = String.fromCharCode(processedCharCode);
+        tableHTML += `<tr><td>${originalChar}</td><td>${processedChar}</td></tr>`;
+      }
+      tableHTML += '</table>';
+      document.getElementById('asciiTable').innerHTML = tableHTML;
+    }
+
+    function downloadText(type) {
+      const input = document.getElementById('input').value;
+      const shift = parseInt(document.getElementById('shiftAmount').value);
+      let content = input;
+      let filename = 'texto_original.txt';
+
+      if (type === 'processed') {
+        content = '';
+        for (let i = 0; i < input.length; i++) {
+          let charCode = input.charCodeAt(i);
+          if (charCode >= 32 && charCode <= 126) {
+            charCode = ((charCode - 32 + shift) % 95) + 32;
+          }
+          content += String.fromCharCode(charCode);
+        }
+        filename = 'texto_procesado.txt';
+      }
+
+      const blob = new Blob([content], { type: 'text/plain' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    }
+
+    function downloadPDF() {
+      const { jsPDF } = window.jspdf;
+      const doc = new jsPDF();
+      const content = document.getElementById('result').innerText;
+      doc.text(content, 10, 10);
+      doc.save('resultado.pdf');
+    }
+
+    document.getElementById('fileInput').addEventListener('change', function(e) {
+      const file = e.target.files[0];
+      if (file) {
+        if (file.name.endsWith('.txt')) {
+          const reader = new FileReader();
+          reader.onload = function(e) {
+            document.getElementById('input').value = e.target.result;
+          };
+          reader.readAsText(file);
+        } else if (file.name.endsWith('.docx')) {
+          mammoth.extractRawText({arrayBuffer: file})
+            .then(function(result) {
+              document.getElementById('input').value = result.value;
+            });
+        }
+      }
+    });
+
+    const toggleSwitch = document.querySelector('.theme-switch input[type="checkbox"]');
+    const sliderText = document.querySelector('.slider-text');
+
+    function switchTheme(e) {
+      if (e.target.checked) {
+        document.body.classList.add('dark-theme');
+        sliderText.textContent = 'Tema Oscuro';
+      } else {
+        document.body.classList.remove('dark-theme');
+        sliderText.textContent = 'Tema Claro';
+      }    
+    }
+
+    toggleSwitch.addEventListener('change', switchTheme, false);
+
+    function openModal(modalId) {
+      document.getElementById(modalId).style.display = 'block';
+    }
+
+    function closeModal(modalId) {
+      document.getElementById(modalId).style.display = 'none';
+    }
+
+    document.getElementById('userGuideBtn').addEventListener('click', function() {
+      openModal('userGuideModal');
+    });
+
+    document.querySelectorAll('.close').forEach(function(closeBtn) {
+      closeBtn.addEventListener('click', function() {
+        closeModal(this.closest('.modal').id);
+      });
+    });
+
+    window.addEventListener('click', function(event) {
+      if (event.target.classList.contains('modal')) {
+        closeModal(event.target.id);
+      }
+    });
+  </script>
+</body></html>
